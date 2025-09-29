@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Simple Drawing Page</title>
+  <style>
+    body { text-align: center; font-family: sans-serif; }
+    canvas { border: 1px solid #000; margin-top: 20px; cursor: crosshair; }
+    button { margin-top: 15px; padding: 10px 20px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h1>AI Real Time Diagraming</h1>
+  <canvas id="drawingCanvas" width="800" height="500"></canvas>
+  <br>
+  <button onclick="clearCanvas()">Al Clear Button</button>
+
+  <script>
+const canvas = document.getElementById('drawingCanvas');
+const ctx = canvas.getContext('2d');
+let drawing = false;
+
+// ✅ Connect to WebSocket
+const ws = new WebSocket("ws://127.0.0.1:8000/ws");
+
+ws.onopen = () => console.log("✅ WebSocket Connected");
+ws.onmessage = (event) => {
+    // Receive broadcast messages
+    console.log("Message from server:", event.data);
+};
+
+canvas.addEventListener('mousedown', () => drawing = true);
+canvas.addEventListener('mouseup', () => drawing = false);
+canvas.addEventListener('mouseout', () => drawing = false);
+canvas.addEventListener('mousemove', draw);
+
+function draw(e) {
+  if (!drawing) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  ctx.fillStyle = 'blue';
+  ctx.beginPath();
+  ctx.arc(x, y, 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 🔵 Send coordinates to backend
+  ws.send(JSON.stringify({ x, y }));
+}
+
+function clearCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+</script>
+
+</body>
+</html>

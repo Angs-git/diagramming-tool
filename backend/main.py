@@ -1,7 +1,12 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect
 from typing import List
+from services.ai_service import clean_diagram  # Absolute import
+from fastapi.staticfiles import StaticFiles
+
 
 app = FastAPI()
+
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 # Keep track of all connected clients
 class ConnectionManager:
@@ -31,7 +36,17 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             data = await websocket.receive_text()
-            # Broadcast received message to all clients
             await manager.broadcast(data)
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+
+@app.post("/analyze-diagram")
+async def analyze_diagram(file: UploadFile = File(...)):
+    # Verify file is a PNG
+    if file.content_type != "image/png":
+        return {"error": "File must be a PNG"}
+    # Read file bytes
+    image_bytes = await file.read()
+    # Call clean_diagram
+    result = await clean_diagram(image_bytes)
+    return result
