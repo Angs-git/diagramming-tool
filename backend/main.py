@@ -2,10 +2,11 @@ from fastapi import FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect
 from typing import List
 from services.ai_service import clean_diagram  # Absolute import
 from fastapi.staticfiles import StaticFiles
-
+from routes.ai_routes import router as ai_router
 
 app = FastAPI()
 
+app.include_router(ai_router)
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 # Keep track of all connected clients
